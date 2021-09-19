@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 )
-
-// #cgo LDFLAGS: -L. ./calculator/libcalc.so
-// #include "calculator/sum.h"
+// #cgo LDFLAGS: -L./libcalc.so
+// #include "sum.h"
 import "C"
 
 func main(){

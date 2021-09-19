@@ -1,6 +1,6 @@
 package main
 /*
-#cgo LDFLAGS: -lssl -lcrypto
+#cgo LDFLAGS:-lssl -lcrypto
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -14,8 +14,7 @@ package main
 #include <arpa/inet.h>
 #include <unistd.h>
 
-// go 코드에서 openssl 라이브러리의 함수를 찾지 못하여 *_Wrap 이름의 함수를 정의하여 이를 호출하도록 한다.
-// TODO : 공유라이브러리를 링크하여 SSL 함수 호출이 가능한지 테스트
+// go 코드에서 define를 찾지 못하여 *_Wrap 이름의 함수를 정의하여 이를 호출하도록 한다.
 void _SSL_Init_Wrap() {
 	SSL_library_init();
 	SSL_load_error_strings();
@@ -24,22 +23,23 @@ void _SSL_Init_Wrap() {
 */
 import "C"
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"strconv"
 	"syscall"
-	"errors"
-	_"unsafe"
+	_ "unsafe"
 )
 
+//#cgo LDFLAGS:-L/usr/lib/x86_64-linux-gnu -libssl -lcrypto
 // CPP의 CIupdtSockSSL 클래스를 대체하는 struct
 type CIupdtSockSSL struct{
 	m_sock	int
-	m_ctx	*C.struct_SSL_CTX
-	m_ssl	*C.struct_SSL
+	m_ctx	*C.struct_ssl_ctx_st
+	m_ssl	*C.struct_ssl_st
 	m_cert   string
-	mPrivkey string
+	m_privkey string
 }
 
 // 기능 : 소켓 연결을 담당하는 _Connect 함수를 호출한 다음, SSL 연결을 담당하는 _SSL_Connect 함수를 호출한다.
@@ -129,10 +129,111 @@ func (s CIupdtSockSSL) getSockaddr(network, addr string) (sa syscall.Sockaddr, s
 	}
 }
 
-func (s CIupdtSockSSL) _SSL_SetupCtxServer() *C.struct_SSL_CTX {
+func (s CIupdtSockSSL) _SSL_SetupCtxServer() (*C.struct_ssl_ctx_st, error) {
+	var err error
+	var ctx *C.struct_ssl_ctx_st
+
+	ctx, err = s._SSL_SetupCtx()
+	if err != nil {
+		return ctx, err
+	}
+	if C.SSL_CTX_use_certificate_file(ctx, C.CString(s.m_cert), C.SSL_FILETYPE_PEM) <= 0 {
+		err = errors.New("SSL_CERT_ERROR")
+		log.Fatal("SSL use certificate file error")
+	}
+	if C.SSL_CTX_use_PrivateKey_file(ctx, C.CString(s.m_privkey), C.SSL_FILETYPE_PEM) <= 0{
+		err = errors.New("SSL_CERT_ERROR")
+		log.Fatal("SSL use privatekey file error")
+	}
+
+	if C.SSL_CTX_check_private_key(ctx) < 0 {
+		err = errors.New("SSL_CERT_ERROR")
+		log.Fatal("SSL ckeck private key error")
+	}
+
+	return ctx, nil
+}
+
+// Wrapping SSL function - 다른 파일로 이동시켜야 한다.
+func SSL_CTX_new() (*C.struct_ssl_ctx_st, error) {
+	var ctx *C.SSL_CTX
+	ctx = C.SSL_CTX_new(C.SSLv23_method())
+	if ctx == nil {
+		log.Fatal("SSL ctx alloc fail")
+		return nil, errors.New("SSL_CREATE_CTX_ERROR")
+	}
+	return ctx, nil
+}
+func SSL_CTX_set_cipher_list(ctx *C.struct_ssl_ctx_st, str string) error {
+	ret := C.SSL_CTX_set_cipher_list(ctx, C.CString(str))
+	if int(ret) == 0 {
+		return errors.New("SSL_CREATE_CTX_ERROR")
+	}
+	return nil
+}
+func SSL_new(ctx *C.struct_ssl_ctx_st) (*C.struct_ssl_st, error) {
+	ssl := C.SSL_new(ctx)
+	if ssl == nil {
+		return nil, errors.New("SSL_ACCEPT_FAIL")
+	}
+	return ssl, nil
+}
+
+func (s CIupdtSockSSL) _SSL_SetupCtx() (*C.struct_ssl_ctx_st, error) {
+	var err error
+	var ctx *C.struct_ssl_ctx_st
+	var t syscall.Time_t
+	syscall.Time(&t)
+	ctx, err = SSL_CTX_new()
+	if err != nil {
+		C.SSL_CTX_free(ctx)
+		return nil, err
+	}
+	err = SSL_CTX_set_cipher_list(ctx, "ALL")
+	if err != nil {
+		C.SSL_CTX_free(ctx)
+		return nil, err
+	}
+	return ctx, nil
+}
+
+func (s CIupdtSockSSL) _SSL_Init() {
+	return
+}
+
+func (s CIupdtSockSSL) _SSL_GetError() error {
 	return nil
 }
 
+func (s CIupdtSockSSL) SSL_Accept(sockfd int) error {
+	var err error
+	s.m_sock = sockfd
+	ling := syscall.Linger{Onoff: 1, Linger: 0}
+	syscall.SetsockoptLinger(s.m_sock, syscall.SOL_SOCKET, syscall.SO_LINGER, &ling)
+	s.m_ctx, err = s._SSL_SetupCtxServer()
+	if err != nil {
+		log.Fatal("SSL set cipher list fail")
+		return err
+	}
+
+	s.m_ssl, err = SSL_new(s.m_ctx)
+	if err != nil {
+		log.Fatal("SSL cannot create ssl object")
+		return err
+	}
+
+	C.SSL_set_fd(s.m_ssl, C.int(s.m_sock))
+	// SSL_set_mode(m_ssl, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
+	C.SSL_ctrl(s.m_ssl, 33, C.long(0x00000001) | C.long(0x00000002) | C.long(0x00000004), nil)
+
+	if int(C.SSL_accept(s.m_ssl)) != 1 {
+		err = errors.New("SSL_ACCEPT_FAIL")
+		log.Fatal("SSL accept error")
+		return err
+	}
+
+	return nil
+}
 
 func (s CIupdtSockSSL) _SSL_Connect() error {
 	return nil
