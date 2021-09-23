@@ -29,7 +29,9 @@ import (
 	"net"
 	"strconv"
 	"syscall"
+	"unsafe"
 	_ "unsafe"
+	"github.com/gjlee0802/Golang-Study/C-Shared-Lib/CIupdtSockSSL/SSL"
 )
 
 //#cgo LDFLAGS:-L/usr/lib/x86_64-linux-gnu -libssl -lcrypto
@@ -201,8 +203,26 @@ func (s CIupdtSockSSL) _SSL_Init() {
 	return
 }
 
-func (s CIupdtSockSSL) _SSL_GetError() error {
-	return nil
+func (s CIupdtSockSSL) _SSL_Free() {
+	if s.m_ssl != nil {
+		C.SSL_free(s.m_ssl)
+		s.m_ssl = nil
+	}
+	if s.m_ctx != nil {
+		C.SSL_CTX_free(s.m_ctx)
+		s.m_ctx = nil
+	}
+}
+
+func (s CIupdtSockSSL) _SSL_GetError(code int) (int, error) {
+	err := C.SSL_get_error(s.m_ssl, C.const_long(code))
+
+	// TODO : switch-case
+	if err == SSL.SSL_ERROR_NONE {
+		return int(err), errors.New("_")
+	}
+
+	return 0, nil
 }
 
 func (s CIupdtSockSSL) SSL_Accept(sockfd int) error {
@@ -224,7 +244,8 @@ func (s CIupdtSockSSL) SSL_Accept(sockfd int) error {
 
 	C.SSL_set_fd(s.m_ssl, C.int(s.m_sock))
 	// SSL_set_mode(m_ssl, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
-	C.SSL_ctrl(s.m_ssl, 33, C.long(0x00000001) | C.long(0x00000002) | C.long(0x00000004), nil)
+	// C.SSL_ctrl(s.m_ssl, 33, C.long(0x00000001) | C.long(0x00000002) | C.long(0x00000004), nil)
+	C.SSL_ctrl(s.m_ssl, 33, SSL.SSL_MODE_ENABLE_PARTIAL_WRITE | SSL.SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL.SSL_MODE_AUTO_RETRY, nil)
 
 	if int(C.SSL_accept(s.m_ssl)) != 1 {
 		err = errors.New("SSL_ACCEPT_FAIL")
@@ -236,10 +257,59 @@ func (s CIupdtSockSSL) SSL_Accept(sockfd int) error {
 }
 
 func (s CIupdtSockSSL) _SSL_Connect() error {
+	var err error
+	s.m_ctx, err = s._SSL_SetupCtx()
+	if err != nil {
+		log.Fatal("SSL cannot setup context")
+		s._SSL_Free()
+		return errors.New("SSL_CONNECT_FAIL")
+	}
+	s.m_ssl, err = C.SSL_new(s.m_ctx)
+	if err != nil {
+		log.Fatal("SSL cannot create ssl object")
+		s._SSL_Free()
+		return errors.New("SSL_CONNECT_FAIL")
+	}
+
+	C.SSL_set_fd(s.m_ssl, s.m_sock)
+	C.SSL_set_mode(s.m_ssl, SSL.SSL_MODE_ENABLE_PARTIAL_WRITE |
+							SSL.SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER |
+							SSL.SSL_MODE_AUTO_RETRY)
+	ret := C.SSL_connect(s.m_ssl)
+
+	if ret != C.int(1) {
+		ret, err = s._SSL_GetError()
+		// TODO : Fill here
+	}
+	curCipr := C.GoString(C.SSL_CIPHER_get_name(C.SSL_get_current_cipher(s.m_ssl)))
+	fmt.Println("SSL connection is success. current cipher name : " + curCipr)
+	// TODO : call log writer
 	return nil
 }
 
-func main(){
+func (s CIupdtSockSSL) Send(buf unsafe.Pointer, size uint16) error {
+	if s.m_sock < 0 || buf == nil || size > 0 {
+		log.Fatal("check input value")
+		return errors.New("INVALID_INPUT")
+	}
+
+	var sentLen uint16
+	var ret int16
+	var err error
+
+	sentLen = 0
+	ret = 0
+
+	for sentLen < size {
+		ret = C.SSL_write(s.m_ssl, C.CString((*C.uchar)(buf)+sentLen), C.uint(size - sentLen))
+		if ret < 1 {
+			ret, err = s._SSL_GetError()
+		}
+	}
+
+}
+
+func main() {
 	mysock := CIupdtSockSSL{0, nil, nil, "", ""}
 	C._SSL_Init_Wrap()
 	mysock.Connect("127.0.0.1", 80, 1.0)
