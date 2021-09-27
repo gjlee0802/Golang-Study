@@ -14,7 +14,7 @@ func (f MyFloat_) Abs() float64 {
 	return float64(f)
 }
 
-func main(){
+func main() {
 	f := MyFloat_(-math.Sqrt2)
 	fmt.Println(f.Abs())
 }

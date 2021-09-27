@@ -1,0 +1,16 @@
+MAKE_ROOT = ../../..
+
+include $(MAKE_ROOT)/make/Makefile.var
+
+MAKELIB = no
+
+VER_MAJOR = 3
+VER_MINOR = 1
+VER_BUILD = 020
+
+MODULE_NAME = pkilogd
+
+INC_DIR = $(PKI31_DBLIB_INC_PATH) $(PKILIB_INC_PATH) $(CIS_INC_PATH) $(PKISYS21_INC_PATH)
+LDFLAGS = $(PKILIB_LIB) $(PKI31_DBLIB_LIB) $(COMPRESSLIB_LIB) $(PKISYS21_SLIB) $(CIS_LIB) -lldapssl30 #$(LDAP_LIB) 
+
+include $(MAKE_ROOT)/make/Makefile.cmm

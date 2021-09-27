@@ -2,9 +2,9 @@ package main
 
 import "fmt"
 
-func fibonacci() func() int{
+func fibonacci() func() int {
 	vala, valb, temp := 0, 1, 1
-	return func () int{
+	return func() int {
 		temp = vala + valb
 		vala = valb
 		valb = temp
@@ -14,7 +14,7 @@ func fibonacci() func() int{
 
 func main() {
 	f := fibonacci()
-	for i:=0; i< 10; i++{
+	for i := 0; i < 10; i++ {
 		fmt.Println(f())
 	}
 }

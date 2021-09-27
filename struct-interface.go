@@ -1,12 +1,13 @@
 package main
+
 import (
-"fmt"
+	"fmt"
 )
 
 /* struct */
 type rect struct {
-	width	float64
-	height	float64
+	width  float64
+	height float64
 }
 
 /* method */

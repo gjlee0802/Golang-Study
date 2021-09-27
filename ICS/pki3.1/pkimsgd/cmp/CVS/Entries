@@ -1,0 +1,25 @@
+/CMP.cpp/1.5/Tue Nov 29 08:07:00 2005//
+/CMP.hpp/1.5/Tue Nov 29 08:07:00 2005//
+/CMPErrorMsgItems.inc/1.3/Tue Nov 29 08:07:01 2005//
+/CMPErrorMsgTable.cpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPErrorMsgTable.hpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPException.cpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPException.hpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPHelper.cpp/1.4/Tue Nov 29 08:07:01 2005//
+/CMPHelper.hpp/1.4/Tue Nov 29 08:07:01 2005//
+/CMPSocket.cpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPSocket.hpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPStatusString_CA.hpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMPStatusString_RA.hpp/1.3/Tue Nov 29 08:07:01 2005//
+/CMP_checkSenderPrivilege.cpp/1.4/Thu Dec 16 13:04:58 2004//
+/CMP_confMessage.cpp/1.5/Tue Nov 29 08:07:02 2005//
+/CMP_getSenderInfo.cpp/1.4/Tue Nov 29 08:07:02 2005//
+/CMP_issueCerts.cpp/1.7/Tue Nov 29 08:07:02 2005//
+/CMP_processCertRequest.cpp/1.4/Tue Nov 29 08:07:02 2005//
+/CMP_processGeneralMessage.cpp/1.4/Tue Nov 29 08:07:02 2005//
+/CMP_processRevokeRequest.cpp/1.6/Tue Nov 29 08:07:02 2005//
+/CMP_recvCertsFromCA.cpp/1.5/Tue Nov 29 08:07:02 2005//
+/CMP_requestRevokeToCA.cpp/1.5/Tue Nov 29 08:07:02 2005//
+/CMP_sendAndRecvMessageWithCA.cpp/1.4/Tue Nov 29 08:07:02 2005//
+/CMP_verifyMessage.cpp/1.3/Tue Nov 29 08:07:02 2005//
+D

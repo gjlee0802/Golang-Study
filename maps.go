@@ -8,7 +8,7 @@ type Vertexa struct {
 
 var m map[string]Vertexa
 
-func main(){
+func main() {
 	m = make(map[string]Vertexa)
 	m["Bell Labs"] = Vertexa{
 		40.68433, -74.39967,

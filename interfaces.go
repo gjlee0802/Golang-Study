@@ -1,7 +1,8 @@
 package main
+
 import (
-"fmt"
-"math"
+	"fmt"
+	"math"
 )
 
 // An interface type is defined as a set of method signatures.

@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-type Vertexb struct{
+type Vertexb struct {
 	Lat, Long float64
 }
 

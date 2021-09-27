@@ -1,7 +1,8 @@
 package main
+
 import "fmt"
 
-func main(){
+func main() {
 	map_mut := make(map[string]int)
 	map_mut["One"] = 1
 	map_mut["Two"] = 2

@@ -1,0 +1,11 @@
+# 2004/12/9
+  0. Makefile 버전
+     VER_MAJOR = 3
+     VER_MINOR = 1
+     VER_BUILD = 030
+  1. SOCKET_SendN 과 SOCKET_RecvN 에 방어적인 코드가 추가된 것을 빌드에 반영
+  2. 포크된 차일드에 타임아웃 기능 추가
+    1. 타임 아웃 로그 추가
+    2. 타임 아웃 설정 추가
+      1. COMMAND_TIMEOUT_HOUR: 커맨드 요청 타임 아웃 (시간 단위 설정)
+      2. DB_PROXY_TIMEOUT_HOUR: 디비 요청 타임 아웃 (시간 단위 설정)
