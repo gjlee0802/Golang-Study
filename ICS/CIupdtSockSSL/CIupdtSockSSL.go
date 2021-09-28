@@ -184,11 +184,11 @@ func (s CIupdtSockSSL) _SSL_Free() {
 }
 
 func (s CIupdtSockSSL) _SSL_GetError(code int64) (int64, error) {
-	err := C.SSL_get_error(s.m_ssl, C.int(code))
+	errcode := C.SSL_get_error(s.m_ssl, C.int(code))
 
 	// TODO : switch-case
-	if err == C.int(SSL.SSL_ERROR_NONE) {
-		return int64(err), errors.New("_")
+	if errcode == C.int(SSL.SSL_ERROR_NONE) {
+		return int64(errcode), errors.New("_")
 	}
 
 	return 0, nil
@@ -252,9 +252,14 @@ func (s CIupdtSockSSL) _SSL_Connect() error {
 
 	var ret int64
 	ret = int64(C.SSL_connect(s.m_ssl))
+	fmt.Print("SSL_connect error : ")
+	fmt.Println(ret)
+
 	if ret != 1 {
 		ret, err = s._SSL_GetError(ret)
 		// TODO : Fill here
+		fmt.Print("ERROR CODE : ")
+		fmt.Println(ret)
 	}
 	curCipr := C.GoString(C.SSL_CIPHER_get_name(C.SSL_get_current_cipher(s.m_ssl)))
 	fmt.Println("SSL connection is success. current cipher name : " + curCipr)
@@ -391,5 +396,5 @@ func NewCIupdtSockSSL(cert string, privkey string) *CIupdtSockSSL {
 
 func main() {
 	mysock := NewCIupdtSockSSL("", "")
-	mysock.Connect("127.0.0.1", 80, 1.0)
+	mysock.Connect("0.0.0.0", 8000, 1.0)
 }

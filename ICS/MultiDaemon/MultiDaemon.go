@@ -12,3 +12,5 @@ type MultiDaemon struct {
 func (d MultiDaemon) getSockConn() Socket.Socket {
 	return d._sockConn
 }
+
+
